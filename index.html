@@ -6,6 +6,80 @@
   <title>BlackJack Card Counting Simulator</title>
   <link rel="stylesheet" href="newLayout.css">
 </head>
+<script>
+  // 1. BOTÓN Y ESTILOS DEL MODO NOCTURNO
+  const themeBtn = document.createElement('button');
+  themeBtn.innerHTML = '🌙';
+  themeBtn.style.position = 'fixed';
+  themeBtn.style.top = '15px';
+  themeBtn.style.right = '15px';
+  themeBtn.style.fontSize = '30px';
+  themeBtn.style.background = 'none';
+  themeBtn.style.border = 'none';
+  themeBtn.style.cursor = 'pointer';
+  themeBtn.style.zIndex = '9999';
+  document.body.appendChild(themeBtn);
+
+  const nightStyle = document.createElement('style');
+  nightStyle.innerHTML = `
+    body.dark-mode { background-color: #121212 !important; color: #e0e0e0 !important; }
+    body.dark-mode .cell, body.dark-mode .box, body.dark-mode .box2, 
+    body.dark-mode #gridHard, body.dark-mode #gridSoft, body.dark-mode #gridPair, 
+    body.dark-mode #gridSurrender, body.dark-mode #stratContainer { 
+      background-color: #2c2c2c !important; color: #fff !important; border-color: #555 !important; 
+    }
+    body.dark-mode .popup-content { background-color: rgba(40, 40, 40, 0.95) !important; color: #fff !important; }
+    body.dark-mode p, body.dark-mode span, body.dark-mode div, body.dark-mode .discText { color: #e0e0e0 !important; }
+    body.dark-mode .title, body.dark-mode .side, body.dark-mode .dealersCard { color: #fff !important; }
+    body.dark-mode input, body.dark-mode button:not(.hitButton):not(.standButton):not(.splitButton):not(.dubbleButton):not(.surrenderButton) {
+      color: black; 
+    }
+    body.dark-mode #failMargin, body.dark-mode #decksInShoe, body.dark-mode #deckPen, 
+    body.dark-mode #speed, body.dark-mode #setBankroll { 
+      background-color: #333 !important; color: white !important; 
+    }
+  `;
+  document.head.appendChild(nightStyle);
+
+  themeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    themeBtn.innerHTML = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+  });
+
+  // 2. TRADUCCIÓN Y MEJORA DE LAS PISTAS DE ESTRATEGIA
+  const originalAlert = window.alert;
+  window.alert = function(msg) {
+    const dic = {
+      'H': '🔴 PEDIR (Hit)',
+      'S': '🔵 PLANTARSE (Stand)',
+      'D': '🟢 DOBLAR (Double)',
+      'Y': '🟡 DIVIDIR (Split)',
+      'U': '⚪ RENDIRSE (Surrender)',
+      'Ds': '🟢 DOBLAR (o Plantarse si no se permite)'
+    };
+    
+    // Traducimos el texto base del código original
+    let tMsg = msg
+      .replace('is correct according to Basic strategy', 'es la jugada correcta según la Estrategia Básica.')
+      .replace('is correct according to true count deviations', 'es la jugada correcta según las Desviaciones (True Count).')
+      .replace('is correct', 'es la jugada correcta.')
+      .replace('it is not correct to split according to Basic strategy', 'NO deberías dividir según la Estrategia Básica.')
+      .replace('it is correct to split according to Basic strategy', '🟡 DIVIDIR (Split) es la jugada correcta según la Estrategia Básica.')
+      .replace('For Hand:', 'Tus cartas:')
+      .replace('and dealer:', '| Carta Dealer:')
+      .replace('Wrong bet size and number of hands according to bet spread strategy', '❌ Error: El tamaño de la apuesta y tus manos no coinciden con el Bet Spread.')
+      .replace('Wrong bet size according to bet spread strategy', '❌ Error: Tamaño de apuesta incorrecto (Revisa el Bet Spread).')
+      .replace('Wrong number of hands according to bet spread strategy', '❌ Error: Número de manos incorrecto.');
+        
+    // Reemplazamos las letras internas ("H", "S") por las instrucciones claras
+    for (const [key, value] of Object.entries(dic)) {
+      const regex = new RegExp(`\\b${key}\\b(?= es la jugada correcta)`, 'g');
+      tMsg = tMsg.replace(regex, value);
+    }
+    
+    originalAlert(tMsg);
+  };
+</script>
 <body>
 
 
