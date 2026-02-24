@@ -778,7 +778,9 @@
 <script src="BlackJack2Script.js"></script>
 <script src="BlackJackInnerWorkings.js"></script>
 <script>
-  // 1. BOTÓN Y ESTILOS DEL MODO NOCTURNO
+  // ==========================================
+  // 1. MODO NOCTURNO (Dark Mode)
+  // ==========================================
   const themeBtn = document.createElement('button');
   themeBtn.innerHTML = '🌙';
   themeBtn.style.position = 'fixed';
@@ -817,7 +819,72 @@
     themeBtn.innerHTML = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
   });
 
-  // 2. TRADUCCIÓN Y MEJORA DE LAS PISTAS DE ESTRATEGIA
+  // ==========================================
+  // 2. SISTEMA DE PISTAS PREVIAS (Hint System)
+  // ==========================================
+  
+  // A. Botón de pedir pista
+  const hintBtn = document.createElement('button');
+  hintBtn.innerHTML = '💡 Pista';
+  hintBtn.style.position = 'fixed';
+  hintBtn.style.top = '70px';
+  hintBtn.style.right = '15px';
+  hintBtn.style.fontSize = '16px';
+  hintBtn.style.padding = '8px 12px';
+  hintBtn.style.backgroundColor = '#1976d2';
+  hintBtn.style.color = 'white';
+  hintBtn.style.border = 'none';
+  hintBtn.style.borderRadius = '5px';
+  hintBtn.style.cursor = 'pointer';
+  hintBtn.style.zIndex = '9999';
+  hintBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+  document.body.appendChild(hintBtn);
+
+  // B. Caja flotante donde se mostrará la pista
+  const hintBox = document.createElement('div');
+  hintBox.style.position = 'fixed';
+  hintBox.style.bottom = '15vh'; // Justo encima de tus botones de Hit/Stand
+  hintBox.style.left = '50%';
+  hintBox.style.transform = 'translateX(-50%)';
+  hintBox.style.backgroundColor = '#fbc02d';
+  hintBox.style.color = '#000';
+  hintBox.style.padding = '15px 25px';
+  hintBox.style.borderRadius = '10px';
+  hintBox.style.fontWeight = 'bold';
+  hintBox.style.fontSize = '1.2rem';
+  hintBox.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+  hintBox.style.display = 'none';
+  hintBox.style.zIndex = '10000';
+  hintBox.style.textAlign = 'center';
+  document.body.appendChild(hintBox);
+
+  let isRequestingHint = false;
+
+  // C. Lógica al apretar "Pista"
+  hintBtn.addEventListener('click', () => {
+    if (typeof HANDPOOL !== 'undefined' && HANDPOOL.HAND && typeof dealer !== 'undefined') {
+      isRequestingHint = true; // Activamos el modo "atrapar alerta"
+      try {
+        // Le enviamos una jugada inventada ('HINT') para forzar al sistema a decirnos la correcta
+        alertCenter(HANDPOOL.HAND, dealer, 'HINT');
+      } catch(e) {
+        mostrarAvisoRapido('⚠️ Debes repartir las cartas primero.');
+      }
+      isRequestingHint = false; // Desactivamos el modo
+    } else {
+      mostrarAvisoRapido('⚠️ Debes repartir las cartas primero.');
+    }
+  });
+
+  function mostrarAvisoRapido(texto) {
+    hintBox.innerHTML = texto;
+    hintBox.style.display = 'block';
+    setTimeout(() => { hintBox.style.display = 'none'; }, 2500);
+  }
+
+  // ==========================================
+  // 3. TRADUCCIÓN E INTERCEPTOR DE ALERTAS
+  // ==========================================
   const originalAlert = window.alert;
   window.alert = function(msg) {
     const dic = {
@@ -829,26 +896,37 @@
       'Ds': '🟢 DOBLAR (o Plantarse si no se permite)'
     };
     
-    // Traducimos el texto base del código original
+    // Traducimos el texto base
     let tMsg = msg
       .replace('is correct according to Basic strategy', 'es la jugada correcta según la Estrategia Básica.')
-      .replace('is correct according to true count deviations', 'es la jugada correcta según las Desviaciones (True Count).')
+      .replace('is correct according to true count deviations', 'es la jugada correcta según el True Count (Desviación).')
       .replace('is correct', 'es la jugada correcta.')
       .replace('it is not correct to split according to Basic strategy', 'NO deberías dividir según la Estrategia Básica.')
       .replace('it is correct to split according to Basic strategy', '🟡 DIVIDIR (Split) es la jugada correcta según la Estrategia Básica.')
-      .replace('For Hand:', 'Tus cartas:')
-      .replace('and dealer:', '| Carta Dealer:')
+      .replace('For Hand:', 'Tu mano:')
+      .replace('and dealer:', '| Dealer:')
       .replace('Wrong bet size and number of hands according to bet spread strategy', '❌ Error: El tamaño de la apuesta y tus manos no coinciden con el Bet Spread.')
-      .replace('Wrong bet size according to bet spread strategy', '❌ Error: Tamaño de apuesta incorrecto (Revisa el Bet Spread).')
+      .replace('Wrong bet size according to bet spread strategy', '❌ Error: Tamaño de apuesta incorrecto.')
       .replace('Wrong number of hands according to bet spread strategy', '❌ Error: Número de manos incorrecto.');
         
-    // Reemplazamos las letras internas ("H", "S") por las instrucciones claras
+    // Reemplazamos las letras internas ("H", "S")
     for (const [key, value] of Object.entries(dic)) {
       const regex = new RegExp(`\\b${key}\\b(?= es la jugada correcta)`, 'g');
       tMsg = tMsg.replace(regex, value);
     }
     
-    originalAlert(tMsg);
+    if (isRequestingHint) {
+      // Si el usuario apretó "Pista", mostramos el cuadro flotante
+      // Formateamos los saltos de línea para que se vean bien en HTML
+      hintBox.innerHTML = '💡 ' + tMsg.split('\\n').join('<br>').split('\n').join('<br>');
+      hintBox.style.display = 'block';
+      
+      // Ocultar la pista automáticamente después de 4 segundos
+      setTimeout(() => { hintBox.style.display = 'none'; }, 4000);
+    } else {
+      // Si fue un error real al jugar, mostramos la alerta normal
+      originalAlert(tMsg);
+    }
   };
 </script>
 
